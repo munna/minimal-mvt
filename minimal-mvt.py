@@ -6,20 +6,20 @@ import json
 
 # Database to connect to
 DATABASE = {
-    'user':     'pramsey',
-    'password': 'password',
-    'host':     'localhost',
+    'user':     'postgres',
+    'password': '123456',
+    'host':     '192.168.1.101',
     'port':     '5432',
-    'database': 'nyc'
+    'database': 'Growth_map_local'
     }
 
 # Table to query for MVT data, and columns to
 # include in the tiles.
 TABLE = {
-    'table':       'nyc_streets',
-    'srid':        '26918',
+    'table':       'growth_blockgroups_current_12month',
+    'srid':        '4326',
     'geomColumn':  'geom',
-    'attrColumns': 'gid, name, type'
+    'attrColumns': 'gid, unemployment_growth, affordability_growth'
     }  
 
 # HTTP server information
@@ -104,12 +104,12 @@ class TileRequestHandler(http.server.BaseHTTPRequestHandler):
             bounds AS (
                 SELECT {env} AS geom, 
                        {env}::box2d AS b2d
-            ),
+            ),gb as (SELECT geom FROM msa_usa_dump WHERE geoid::bigint=35620) ,
             mvtgeom AS (
                 SELECT ST_AsMVTGeom(ST_Transform(t.{geomColumn}, 3857), bounds.b2d) AS geom, 
                        {attrColumns}
-                FROM {table} t, bounds
-                WHERE ST_Intersects(t.{geomColumn}, ST_Transform(bounds.geom, {srid}))
+                FROM {table} t, bounds,gb
+                WHERE ST_Intersects(t.{geomColumn}, ST_Transform(bounds.geom, {srid})) and ST_Intersects(gb.geom,  t.geom)
             ) 
             SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
         """
@@ -139,7 +139,7 @@ class TileRequestHandler(http.server.BaseHTTPRequestHandler):
 
     # Handle HTTP GET requests
     def do_GET(self):
-
+        print(self.path);
         tile = self.pathToTile(self.path)
         if not (tile and self.tileIsValid(tile)):
             self.send_error(400, "invalid tile path: %s" % (self.path))

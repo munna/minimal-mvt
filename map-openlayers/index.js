@@ -14,7 +14,7 @@ var vtLayer = new VectorTileLayer({
   declutter: false,
   source: new VectorTileSource({
     format: new MVT(),
-    url: 'http://localhost:8080/{z}/{x}/{y}.pbf'
+    url: 'http://localhost:8080/{z}/{x}/{y}.pbf?name=munna'
   }),
   style: new Style({
       stroke: new Stroke({
